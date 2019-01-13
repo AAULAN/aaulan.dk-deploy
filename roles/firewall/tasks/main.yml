@@ -1,0 +1,24 @@
+- name: Install ufw
+  apt:
+    name: ufw
+    state: latest
+
+- name: Enable ufw
+  ufw:
+    policy: deny
+    state: enabled
+
+- name: Firewall allow HTTP
+  ufw:
+    rule: allow
+    port: http
+
+- name: Firewall allow HTTPS
+  ufw:
+    rule: allow
+    port: https
+
+- name: Firewall allow SSH
+  ufw:
+    rule: allow
+    port: ssh

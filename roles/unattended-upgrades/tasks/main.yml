@@ -1,0 +1,20 @@
+- name: Install unattended-upgrades
+  apt:
+    name: unattended-upgrades
+    state: latest
+
+- name: Enable automatic package upgrades
+  copy:
+    src: 20auto-upgrades
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: u=rw,g=r,o=r
+    owner: root
+    group: root
+
+- name: Configure automatic package upgrades
+  copy:
+    src: 50unattended-upgrades
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    mode: u=rw,g=r,o=r
+    owner: root
+    group: root
