@@ -1,0 +1,11 @@
+- name: Install git
+  apt:
+    name: git
+    state: latest
+
+- name: Clone website
+  git:
+    version: production
+    repo: https://github.com/AAULAN/aaulan2.0.git
+    dest: /var/www/aaulan.dk/
+
