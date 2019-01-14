@@ -3,11 +3,6 @@
     name: ufw
     state: latest
 
-- name: Enable ufw
-  ufw:
-    policy: deny
-    state: enabled
-
 - name: Firewall allow HTTP
   ufw:
     rule: allow
@@ -22,3 +17,8 @@
   ufw:
     rule: allow
     port: ssh
+
+- name: Enable ufw
+  ufw:
+    policy: deny
+    state: enabled
