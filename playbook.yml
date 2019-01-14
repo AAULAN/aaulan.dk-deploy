@@ -1,4 +1,11 @@
 ---
+- hosts: webserver
+  gather_facts: False
+  
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
 - name: Setup webserver
   hosts: webserver
   become: yes
@@ -59,14 +66,8 @@
         path: "/var/www/aaulan.dk"
         state: directory
 
-    - name: Put placeholder website in placeholder
-      copy:
-        dest: "/var/www/aaulan.dk/index.html"
-        content: |
-          <html><head><title>It works!</title></head>
-          <body>
-           <h2> Server successfully deployed.</h2>
-          </body>
+    - include_role:
+        name: get-website
 
     - include_role:
         name: firewall
