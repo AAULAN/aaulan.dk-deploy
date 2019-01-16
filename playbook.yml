@@ -97,11 +97,16 @@
     acme_install_cert: true
     acme_issue_mode: 'nginx'
 
+    acme_webroot_dir_owner: 'nginx'
+    acme_cert_dir_group: 'nginx'
+
     acme_reload_service_command: 'systemctl reload nginx'
     acme_issue_command: "{{ acme_script }} --issue --test --pre-hook '{{ acme_pre_hook }}' --post-hook '{{ acme_post_hook }}' -d {{ acme_domains | join(' -d ') }}"
 
     acme_sudo_reload_httpd: false
     acme_sudo_reload_haproxy: false
+
+    acme_user: 'root'
 
     acme_cert_dir: '/var/www/certs'
     acme_keyfile_name: 'key.pem'
@@ -111,3 +116,4 @@
 
   roles:
     - acme.sh
+  
