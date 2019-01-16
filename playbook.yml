@@ -13,6 +13,8 @@
   become: true
 
   vars:
+    server_webroot: '/var/www/aaulan.dk'
+
     acme_install_cert: true
     acme_cert_dir: '/var/www/certs'
     acme_keyfile_name: 'key.pem'
