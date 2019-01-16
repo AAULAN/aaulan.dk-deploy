@@ -27,22 +27,13 @@
   when:
     - ansible_os_family == "Debian"
 
-- name: Make sure curl is present
-  yum:
-     name: curl
-     state: present
-  when:
-    - ansible_os_family == "RedHat"
-
-- name: Make sure curl is present
-  apt:
-     name: curl
-     state: present
-  when:
-    - ansible_os_family == "Debian"
+- name: Get acme.sh
+  get_url:
+    url: 'https://get.acme.sh'
+    dest: /tmp/getacme.sh
 
 - name: Install acme.sh
-  command: 'curl https://get.acme.sh | sh'
+  command: 'sh /tmp/getacme.sh'
 
 - import_tasks: get_cert_apache.yml
   when: 
