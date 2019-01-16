@@ -1,2 +1,2 @@
-[webserver]
-35.246.156.178
+[aaulan_webserver]
+192.168.32.8 ansible_user=vagrant
