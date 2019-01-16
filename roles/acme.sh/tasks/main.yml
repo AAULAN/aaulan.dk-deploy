@@ -19,7 +19,6 @@
      state: present
   when:
     - ansible_os_family == "RedHat"
-    - acme_standalone_mode_required
 
 - name: Make sure socat is present (for standalone mode)
   apt:
@@ -27,7 +26,6 @@
      state: present
   when:
     - ansible_os_family == "Debian"
-    - acme_standalone_mode_required
 
 - name: Make sure curl is present
   yum:
