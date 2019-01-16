@@ -108,3 +108,6 @@
     acme_fullchain_name: 'chain.pem'
     acme_domains:
       - 'home.mikkel.cc'
+
+  roles:
+    - acme.sh
