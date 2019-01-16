@@ -43,10 +43,13 @@
         dest: '{{ acme_cert_dir }}'
         state: directory
 
-    - name: Ensure we have decent entropy
+    - name: Install rng-tools
       apt:
         name: rng-tools
         state: present
+      
+    - name: Speed up entropy
+      command: rngd -r /dev/urandom
 
     - name: Generate DH parameters (This takes ages > 15min)
       openssl_dhparam:
