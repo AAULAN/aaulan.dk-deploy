@@ -1,76 +1,109 @@
 ---
-- hosts: webserver
-  gather_facts: False
-  
+- name: Bootstrap python 2
+  hosts: aaulan_webserver
+  become: true
+  gather_facts: false
+
   tasks:
   - name: install python 2
     raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
 
-- name: Setup webserver
-  hosts: webserver
-  become: yes
+- name: Install nginx
+  hosts: aaulan_webserver
+  become: true
 
   vars:
-    certbot_admin_email: aaulan@aaulan.dk
-    certbot_create_if_missing: true
-    certbot_auto_renew_options: "--quiet --no-self-upgrade --pre-hook 'systemctl stop nginx' --post-hook 'systemctl start nginx'"
-    certbot_create_standalone_stop_services: []
+    acme_install_cert: true
+    acme_cert_dir: '/var/www/certs'
+    acme_keyfile_name: 'key.pem'
+    acme_fullchain_name: 'chain.pem'
+    acme_domains:
+      - 'home.mikkel.cc'
 
-    certbot_certs:
-      - domains:
-        - aaulan.dk
-
-    nginx_vhosts:
-      - listen: "443 ssl http2"
-        server_name: "aaulan.dk"
-        root: "/var/www/aaulan.dk"
-        index: "index.htm index.html"
-        state: "present"
-        template: "{{ nginx_vhost_template }}"
-        filename: "aaulan.dk.conf"
-        extra_parameters: |
-          ssl_certificate        /etc/letsencrypt/live/aaulan.dk/fullchain.pem;
-          ssl_certificate_key    /etc/letsencrypt/live/aaulan.dk/privkey.pem;
-          ssl_protocols          TLSv1.1 TLSv1.2;
-          ssl_ciphers            HIGH:!aNULL:!MD5;
-
-      - listen: "80 default_server"
-        server_name: "_"
-        return: "301 https://$host$request_uri"
-        filename: "ssl_redirect.conf"
-
-    nginx_remove_default_vhost: true
-    nginx_ppa_use: true
-    nginx_ppa_version: stable
-  
   pre_tasks:
-    - name: Update apt cache.
-      apt: update_cache=true cache_valid_time=600
-      when: ansible_os_family == 'Debian'
-      changed_when: false
+    - name: Remove apache
+      apt: 
+        name: apache2
+        state: absent
+
+    - name: Install pip
+      apt:
+        name: python-pip
+        state: present
     
-    - name: Install dependencies (Debian).
-      apt: name=cron state=present
-      when: ansible_os_family == 'Debian'
+    - name: Ensure python OpenSSL dependencies are installed.
+      pip:
+        name: pyOpenSSL
+        state: present
 
-  roles:
-    - geerlingguy.certbot
-    - geerlingguy.nginx
-
-  tasks:
-    - name: Flush handlers in case any configs have changed.
-      meta: flush_handlers
-
-    - name: Make directory for website
+    - name: Ensure certificate location exists
       file:
-        path: "/var/www/aaulan.dk"
+        dest: '{{ acme_cert_dir }}'
         state: directory
 
-    - include_role:
-        name: get-website
+    - name: Ensure we have decent entropy
+      apt:
+        name: rng-tools
+        state: present
 
-    - include_role:
-        name: firewall
+    - name: Generate DH parameters (This takes ages > 15min)
+      openssl_dhparam:
+        path: '{{ acme_cert_dir }}/dhparams.pem'
+        size: 4096
 
-    - include_role:
-        name: unattended-upgrades
+    - name: Generate an OpenSSL private key.
+      openssl_privatekey:
+        path: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
+
+    - name: Generate an OpenSSL CSR.
+      openssl_csr:
+        path: ~/temp.csr
+        privatekey_path: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
+        common_name: "temp"
+
+    - name: Generate a Self Signed OpenSSL certificate.
+      openssl_certificate:
+        path: '{{ acme_cert_dir }}/{{ acme_fullchain_name }}'
+        privatekey_path: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
+        csr_path: ~/temp.csr
+        provider: selfsigned
+
+  roles:
+    - nginxinc.nginx
+
+  post_tasks:
+    - name: Set up nginx configuration for site
+      template:
+        src: templates/website.conf.j2
+        dest: /etc/nginx/sites-available/aaulan.dk.conf
+    
+    - name: Enable site
+      file:
+        src: /etc/nginx/sites-available/aaulan.dk.conf
+        dest: /etc/nginx/sites-enabled/aaulan.dk.conf
+        state: link
+    
+    - name: Reload nginx
+      service: 
+        name: nginx
+        state: reloaded
+
+- name: Install acme.sh and aquire certs
+  hosts: aaulan_webserver
+  become: true
+
+  vars:
+    acme_install_cert: true
+    acme_issue_mode: 'nginx'
+
+    acme_reload_service_command: 'systemctl reload nginx'
+    acme_issue_command: "{{ acme_script }} --issue --test --pre-hook '{{ acme_pre_hook }}' --post-hook '{{ acme_post_hook }}' -d {{ acme_domains | join(' -d ') }}"
+
+    acme_sudo_reload_httpd: false
+    acme_sudo_reload_haproxy: false
+
+    acme_cert_dir: '/var/www/certs'
+    acme_keyfile_name: 'key.pem'
+    acme_fullchain_name: 'chain.pem'
+    acme_domains:
+      - 'home.mikkel.cc'
