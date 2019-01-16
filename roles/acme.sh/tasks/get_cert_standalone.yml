@@ -1,0 +1,49 @@
+- name: Stop services on port 80 or 443
+  command: "{{ acme_stop_service_command }}"
+  when: acme_stop_service_command is defined
+
+- name: Get certificate standalone
+  command: "{{ acme_issue_command }} --standalone"
+
+- name: Ensure certificate location exists
+  file:
+    dest: '{{ acme_cert_dir }}'
+    owner: '{{ acme_cert_dir_owner }}'
+    group: '{{ acme_cert_dir_group }}'
+    mode: '{{ acme_cert_dir_permissions }}'
+    state: directory
+
+- name: Ensure the certificate file exists with the right permissions
+  file:
+    dest: '{{ acme_cert_dir }}/{{ acme_cert_name }}'
+    owner: '{{ acme_cert_dir_owner }}'
+    group: '{{ acme_cert_dir_group }}'
+    mode: '{{ acme_cert_dir_permissions }}'
+    state: touch
+
+- name: Ensure the key file exists with the right permissions
+  file:
+    dest: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
+    owner: '{{ acme_cert_dir_owner }}'
+    group: '{{ acme_cert_dir_group }}'
+    mode: '{{ acme_cert_dir_permissions }}'
+    state: touch
+
+- name: Ensure the fullchain file exists with the right permissions
+  file:
+    dest: '{{ acme_cert_dir }}/{{ acme_fullchain_name }}'
+    owner: '{{ acme_cert_dir_owner }}'
+    group: '{{ acme_cert_dir_group }}'
+    mode: '{{ acme_cert_dir_permissions }}'
+    state: touch
+
+- name: Install certificate
+  command: >-
+    acme.sh --install-cert -d {{ acme_domains[0] }}
+    --cert-file      {{ acme_cert_dir }}/{{ acme_cert_name }} 
+    --key-file       {{ acme_cert_dir }}/{{ acme_keyfile_name }}  
+    --fullchain-file {{ acme_cert_dir }}/{{ acme_fullchain_name }}
+
+- name: Start services again
+  command: "{{ acme_start_service_command }}"
+  when: acme_start_service_command is defined

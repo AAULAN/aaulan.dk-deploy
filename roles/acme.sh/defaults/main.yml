@@ -1,0 +1,34 @@
+---
+# Letsencrypt user
+acme_user: 'root'
+
+# Location of acme.sh
+acme_script: '~/.acme.sh/acme.sh'
+
+# Config for aquiring and installing a cert
+acme_install_cert: false
+acme_domains: 
+  - 'example.com'
+  - 'www.example.com'
+
+acme_keyfile_name: 'key.pem'
+acme_fullchain_name: 'chain.pem'
+acme_cert_name: 'cert.pem' # Used for apache
+acme_cert_dir: '/var/www/certs'
+acme_cert_dir_owner: '{{ acme_user }}'
+acme_cert_dir_group: 'www-data'
+acme_cert_dir_permissions: 'u=rw,g=r'
+
+acme_webroot_dir: "/var/www/html"
+acme_webroot_dir_owner: 'www-data'
+acme_webroot_dir_group: '{{ acme_user }}'
+acme_webroot_dir_permissions: 'u=rw,g=rw'
+
+acme_issue_mode: 'standalone' # Can be 'nginx', 'apache', 'webroot', 'standalone'
+
+acme_pre_hook: ""
+acme_post_hook: ""
+acme_issue_command: "{{ acme_script }} --issue --pre-hook '{{ acme_pre_hook }}' --post-hook '{{ acme_post_hook }}' -d {{ acme_domains | join(' -d ') }}"
+acme_stop_service_command: ""
+acme_start_service_command: ""
+acme_reload_service_command: ""
