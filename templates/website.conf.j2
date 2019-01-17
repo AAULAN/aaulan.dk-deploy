@@ -3,7 +3,7 @@
 server {
     server_name {{ domains | join(' ') }};
 
-    listen 443 ssl;
+    listen 443 ssl http2;
 
     ssl_certificate {{ acme_cert_dir }}/{{ acme_fullchain_name }};
     ssl_certificate_key {{ acme_cert_dir }}/{{ acme_keyfile_name }};
