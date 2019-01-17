@@ -1,6 +1,7 @@
 ---
 - hosts: aaulan_webserver
   gather_facts: False
+  become: true
   
   tasks:
   - name: install python 2
@@ -8,7 +9,7 @@
 
 - name: Setup webserver
   hosts: aaulan_webserver
-  become: yes
+  become: true
 
   vars:
     certbot_admin_email: aaulan@aaulan.dk
