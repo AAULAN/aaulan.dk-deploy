@@ -8,19 +8,45 @@
   - name: install python 2
     raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
 
+
+- name: Install acme.sh and aquire certs
+  hosts: aaulan_webserver
+  become: true
+
+  vars_files:
+    - vars/gdns_credentials.yml
+
+  vars:
+    acme_sh_account_email: "crew@aaulan.dk"
+    acme_sh_copy_certs_to_path: "/var/www/certs"
+
+    acme_sh_default_staging: False
+    acme_sh_default_force_issue: True
+    acme_sh_default_dns_provider: "dns_gdnsdk"
+    acme_sh_default_dns_sleep: 360
+
+    acme_sh_domains:
+      - domains: ["aaulan.dk", "*.aaulan.dk"]
+        debug: False
+
+  roles:
+    - { role: "nickjj.acme_sh", tags: ["acme_sh"] }
+
+
 - name: Install nginx
   hosts: aaulan_webserver
   become: true
 
   vars:
-    server_webroot: '/var/www/aaulan.dk'
+    domains: 
+      - 'aaulan.dk'
+      - '*.aaulan.dk'
 
-    acme_install_cert: true
+    server_webroot: '/var/www/{{ domains[0] }}'
+
     acme_cert_dir: '/var/www/certs'
-    acme_keyfile_name: 'key.pem'
-    acme_fullchain_name: 'chain.pem'
-    acme_domains:
-      - 'home.mikkel.cc'
+    acme_keyfile_name: '{{ domains[0] }}.key'
+    acme_fullchain_name: '{{ domains[0] }}.pem'
 
   pre_tasks:
     - name: Remove apache
@@ -51,27 +77,10 @@
     - name: Speed up entropy
       command: rngd -r /dev/urandom
 
-    - name: Generate DH parameters (This takes ages > 15min)
+    - name: Generate DH parameters
       openssl_dhparam:
         path: '{{ acme_cert_dir }}/dhparams.pem'
-        size: 4096
-
-    - name: Generate an OpenSSL private key.
-      openssl_privatekey:
-        path: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
-
-    - name: Generate an OpenSSL CSR.
-      openssl_csr:
-        path: ~/temp.csr
-        privatekey_path: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
-        common_name: "temp"
-
-    - name: Generate a Self Signed OpenSSL certificate.
-      openssl_certificate:
-        path: '{{ acme_cert_dir }}/{{ acme_fullchain_name }}'
-        privatekey_path: '{{ acme_cert_dir }}/{{ acme_keyfile_name }}'
-        csr_path: ~/temp.csr
-        provider: selfsigned
+        size: 2048
 
   roles:
     - nginxinc.nginx
@@ -92,31 +101,21 @@
         name: nginx
         state: reloaded
 
-- name: Install acme.sh and aquire certs
+- name: Get website and finish up
   hosts: aaulan_webserver
   become: true
 
-  vars:
-    acme_install_cert: true
-    acme_issue_mode: 'nginx'
+  tasks:
+  - name: Make directory for website
+    file:
+      path: "/var/www/aaulan.dk"
+      state: directory
 
-    acme_webroot_dir_owner: 'nginx'
-    acme_cert_dir_group: 'nginx'
+  - include_role:
+      name: get-website
 
-    acme_reload_service_command: 'systemctl reload nginx'
-    acme_issue_command: "{{ acme_script }} --issue --test --pre-hook '{{ acme_pre_hook }}' --post-hook '{{ acme_post_hook }}' -d {{ acme_domains | join(' -d ') }}"
+  - include_role:
+     name: firewall
 
-    acme_sudo_reload_httpd: false
-    acme_sudo_reload_haproxy: false
-
-    acme_user: 'root'
-
-    acme_cert_dir: '/var/www/certs'
-    acme_keyfile_name: 'key.pem'
-    acme_fullchain_name: 'chain.pem'
-    acme_domains:
-      - 'home.mikkel.cc'
-
-  roles:
-    - acme.sh
-  
+  - include_role:
+     name: unattended-upgrades

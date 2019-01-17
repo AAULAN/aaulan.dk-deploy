@@ -1,7 +1,7 @@
 #{{ ansible_managed }}
 
 server {
-    server_name {{ acme_domains | join(' ') }};
+    server_name {{ domains | join(' ') }};
 
     listen 443 ssl;
 
