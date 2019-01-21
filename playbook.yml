@@ -21,7 +21,7 @@
     acme_sh_copy_certs_to_path: "/var/www/certs"
 
     acme_sh_default_staging: False
-    acme_sh_default_force_issue: True
+    acme_sh_default_force_issue: False # Set this to true if moving from or to staging
     acme_sh_default_dns_provider: "dns_gdnsdk"
     acme_sh_default_dns_sleep: 360
 
