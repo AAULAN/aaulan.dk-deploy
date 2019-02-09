@@ -45,6 +45,7 @@
     server_webroot: '/var/www/{{ domains[0] }}'
 
     acme_cert_dir: '/var/www/certs'
+    dhparams_remote_directory: '/var/www/certs'
     acme_keyfile_name: '{{ domains[0] }}.key'
     acme_fullchain_name: '{{ domains[0] }}.pem'
 
@@ -54,35 +55,8 @@
         name: apache2
         state: absent
 
-    - name: Install pip
-      apt:
-        name: python-pip
-        state: present
-    
-    - name: Ensure python OpenSSL dependencies are installed.
-      pip:
-        name: pyOpenSSL
-        state: present
-
-    - name: Ensure certificate location exists
-      file:
-        dest: '{{ acme_cert_dir }}'
-        state: directory
-
-    - name: Install rng-tools
-      apt:
-        name: rng-tools
-        state: present
-      
-    - name: Speed up entropy
-      command: rngd -r /dev/urandom
-
-    - name: Generate DH parameters
-      openssl_dhparam:
-        path: '{{ acme_cert_dir }}/dhparams.pem'
-        size: 2048
-
   roles:
+    - duckle29.dhparam
     - nginxinc.nginx
 
   post_tasks:
