@@ -1,5 +1,4 @@
 ---
-- src: infopen.odoo
 - src: nickjj.acme_sh
 - src: nginxinc.nginx
 - src: duckle29.dhparam
