@@ -20,5 +20,6 @@
 
 - name: Enable ufw
   ufw:
+    direction: incoming
     policy: deny
     state: enabled
